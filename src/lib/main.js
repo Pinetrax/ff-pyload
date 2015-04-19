@@ -14,6 +14,7 @@ var iscontextmenu = false; // Is the context menu displayed (for loggedin)
 
 // requirements
 var request = require("sdk/request").Request; // Sending posts for API
+var tabs = require("sdk/tabs");
 
 // Read prefs
 var preferences = require("sdk/simple-prefs").prefs;
@@ -22,6 +23,8 @@ var preferences = require("sdk/simple-prefs").prefs;
 
 if (preferences.username != "" && preferences.password != "" && (/.+?:\d+/.test(preferences.adress) || /[\d\w\.-]+/.test(preferences.adress))) {
 	api_login();
+} else if (preferences.sessionid != "" && preferences.username != "" && preferences.password == "" && (/.+?:\d+/.test(preferences.adress) || /[\d\w\.-]+/.test(preferences.adress))) {
+	api_call("getServerVersion");
 } else {
 	loggedin = false;
 }
@@ -43,7 +46,7 @@ function api_login(password) {
 		onComplete: function(response) {
 										if (/"[\d\w]+"/.test(response.text)) {
 											// set login done
-											preferences.sessionid = response.text;
+											preferences.sessionid = response.text.substr(1, response.text.length - 2);
 											loggedin = true;
 											// console.log("Login successful");
 											// console.log(preferences.sessionid);
@@ -57,6 +60,7 @@ function api_login(password) {
 		}).post();
 }
 function api_call(name, parameters) {
+	parameters = parameters || { session: preferences.sessionid };
 	parameters.session = preferences.sessionid;
 	if (preferences.ssl) {
 		var url = "https://" + preferences.adress + "/api/" + name;
@@ -66,21 +70,27 @@ function api_call(name, parameters) {
 	request({
 		url: url,
 		content: parameters,
-		onComplete: function(name, response) { api_response(name, response); }
+		onComplete: function(response) { api_response(response, name); }
 		}).post();
 }
-function api_response(name, response) {
+function api_response(response, name) {
 	// response here
-	console.log(name + ": " + response);
-	switch ("name") {
+	// console.log(name + ": " + response.text);
+	switch (name) {
 		case "getServerVersion":
-			console.log(response);
+			// test, if the sessionid is still usable
+			if (/"[\d\.]+"/.test(response.text)) {
+				loggedin = true;
+			} else {
+				loggedin = false;
+			}
+			console.log(response.text);
 			break;
 		case "freeSpace":
-			console.log(response);
+			console.log(response.text);
 			break;
 		case "checkOnlineStatus":
-			console.log(response);
+			console.log(response.text);
 	}
 }
 
@@ -89,7 +99,6 @@ function api_response(name, response) {
 // ------------------------------------------
 
 var data = require("sdk/self").data;
-var tabs = require("sdk/tabs");
 
 var { ToggleButton } = require('sdk/ui/button/toggle');
 var panels = require("sdk/panel");
@@ -122,23 +131,41 @@ var pyload_panel = panels.Panel({
 function handleChange(state) {
 	if (state.checked) {
 		if (loggedin) {
+			var url = "";
 			// Download panel/webinterface/built-in interface
 			if (preferences.buttonopt == "P") {
 				pyload_panel.contentURL = data.url("panels/panel.html");
 				pyload_panel.resize(400, 600);
 				pyload_panel.show({ position: pyload_button });
 			} else if (preferences.buttonopt == "I") { // webinterface
-				// planned: reuse existing tab
 				if (preferences.ssl) {
-					tabs.open("https://" + preferences.adress + "/");
+					url = "https://" + preferences.adress + "/";
 					pyload_button.state('window', {checked: false});
 				} else {
-					tabs.open("http://" + preferences.adress + "/");
+					url = "http://" + preferences.adress + "/";
 					pyload_button.state('window', {checked: false});
 				}
+				api_call("getServerVersion");
 			} else { // built-in interface (coming soon) ("B")
-				tabs.open(data.url("webinterface/index.html"));
+				url = data.url("webinterface/index.html");
 				pyload_button.state('window', {checked: false});
+			}
+			if (url != "") {
+				var reused = false;
+				for (let tab of tabs) {
+					if (RegExp(url).test(tab.url)) {
+						tab.activate();
+						reused = true;
+					}
+					if ((/about:newtab/.test(tab.url)) && !reused) {
+						tab.activate();
+						tab.url = url;
+						reused = true;
+					}
+				}
+				if (!reused) {
+					tabs.open(url);
+				}
 			}
 		} else {
 			// pyload_panel.contentURL = data.url("panel/login.html"); // when this line is present, giving preferences over is broken :(
