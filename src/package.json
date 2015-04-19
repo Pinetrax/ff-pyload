@@ -1,0 +1,76 @@
+{
+  "name": "ff-pyload",
+  "title": "Pyload for Firefox",
+  "id": "jid1-2FalyM9m0xdreg",
+  "description": "Pyload for Firefox utilizing the webinterface API.",
+  "author": "",
+  "license": "MPL 2.0",
+  "version": "0.1",
+  "preferences": [{
+        "name": "adress",
+        "title": "Adress of your pyload webinterface",
+        "description": "Put in IP:Port or webadress of your pyload webinterface.",
+        "type": "string",
+        "value": "localhost:8000"
+    },
+    {
+        "name": "ssl",
+		"title": "Use SSL",
+		"description": "If enabled on your server, use ssl to connect. (needed if enabled)",
+        "type": "bool",
+        "value": false
+    },
+    {
+        "name": "savepw",
+		"title": "Save password",
+		"description": "If you don't want the addon to save your password, uncheck this.",
+        "type": "bool",
+        "value": false
+    },
+	{
+        "name": "username",
+        "title": "Username",
+        "type": "string",
+        "value": "pyload"
+    },
+	{
+        "name": "password",
+        "title": "Password",
+        "type": "string",
+        "value": "1234567"
+    },
+	{
+        "name": "buttonopt",
+		"title": "Configure buttons onclick action",
+		"description": "If set for the popup, a button there will bring you to the built-in webinterface.",
+        "type": "radio",
+        "value": "I",
+		"options": [
+        {
+            "value": "P",
+            "label": "Show summerize popup (coming soon)"
+        },
+		{
+            "value": "I",
+            "label": "Launch default webinterface"
+        },
+        {
+            "value": "B",
+            "label": "Launch built-in webinterface (coming soon)"
+        }]
+    },
+	{
+        "name": "captchatime",
+		"title": "Check interval for captchas",
+		"description": "Set time in seconds to check for captchas and put out a notification.",
+        "type": "integer",
+        "value": 15
+    },
+	{
+        "name": "sessionid",
+		"title": "SessionID",
+        "type": "string",
+        "value": "",
+		"hidden": true
+    }]
+}
