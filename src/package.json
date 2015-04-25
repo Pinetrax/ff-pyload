@@ -7,8 +7,8 @@
   "license": "MPL 2.0",
   "version": "0.1",
   "preferences": [{
-        "name": "adress",
-        "title": "Adress of your pyload webinterface",
+        "name": "address",
+        "title": "Address of your pyload webinterface",
         "description": "Put in IP:Port or webadress of your pyload webinterface.",
         "type": "string",
         "value": "localhost:8000"
