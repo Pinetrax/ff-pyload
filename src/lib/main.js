@@ -23,9 +23,9 @@ var preferences = require("sdk/simple-prefs").prefs;
 
 // Check login or do the login, else change button behavior to login
 
-if (preferences.username != "" && preferences.password != "" && (/.+?:\d+/.test(preferences.address) || /[\d\w\.-]+/.test(preferences.address))) {
+if (preferences.username != "" && preferences.password != "" && (/.+?:\d+/.test(preferences.adress) || /[\d\w\.-]+/.test(preferences.adress))) {
 	api_login();
-} else if (preferences.sessionid != "" && preferences.username != "" && preferences.password == "" && (/.+?:\d+/.test(preferences.address) || /[\d\w\.-]+/.test(preferences.address))) {
+} else if (preferences.sessionid != "" && preferences.username != "" && preferences.password == "" && (/.+?:\d+/.test(preferences.adress) || /[\d\w\.-]+/.test(preferences.adress))) {
 	api_call("getServerVersion");
 } else {
 	loggedin = false;
@@ -38,9 +38,9 @@ function api_login(password) {
 	password = password || preferences.password;
 	
 	if (preferences.ssl) {
-		var url = "https://" + preferences.address + "/api/login";
+		var url = "https://" + preferences.adress + "/api/login";
 	} else {
-		var url = "http://" + preferences.address + "/api/login";
+		var url = "http://" + preferences.adress + "/api/login";
 	}
 	request({
 		url: url,
@@ -66,9 +66,9 @@ function api_call(name, parameters) {
 	parameters = parameters || { session: preferences.sessionid };
 	parameters.session = preferences.sessionid;
 	if (preferences.ssl) {
-		var url = "https://" + preferences.address + "/api/" + name;
+		var url = "https://" + preferences.adress + "/api/" + name;
 	} else {
-		var url = "http://" + preferences.address + "/api/" + name;
+		var url = "http://" + preferences.adress + "/api/" + name;
 	}
 	request({
 		url: url,
@@ -205,11 +205,15 @@ function handleChange(state) {
 				pyload_panel.show({ position: pyload_button });
 			} else if (preferences.buttonopt == "I") { // webinterface
 				if (preferences.ssl) {
-					url = "https://" + preferences.address + "/";
+					url = "https://" + preferences.adress + "/";
 					pyload_button.state('window', {checked: false});
 				} else {
+<<<<<<< HEAD
 					url = "http://" + preferences.address + "/";
 >>>>>>> origin/master
+=======
+					url = "http://" + preferences.adress + "/";
+>>>>>>> 7cd4e4fa5d8f421ad7c2e16c210cbe88e39b3a96
 					pyload_button.state('window', {checked: false});
 				}
 			}
@@ -233,7 +237,7 @@ function handleChange(state) {
 			// pyload_panel.contentURL = data.url("panel/login.html"); // when this line is present, giving preferences over is broken :(
 			pyload_panel.resize(300, 400);
 			pyload_panel.show({ position: pyload_button });
-			pyload_panel.port.emit("show", { username: preferences.username, password: preferences.password, savepw: preferences.savepw, address: preferences.address, ssl: preferences.ssl });
+			pyload_panel.port.emit("show", { username: preferences.username, password: preferences.password, savepw: preferences.savepw, adress: preferences.adress, ssl: preferences.ssl });
 		}
 	}
 }
@@ -261,7 +265,7 @@ pyload_panel.port.on("login_entered", function (logindata) {
 	} else {
 		preferences.password = "";
 	}
-	preferences.address = logindata.address;
+	preferences.adress = logindata.adress;
 	loginfrompanel = true;
 	api_login(logindata.password);
 	// wait for the result (calling loginpanelresponse();)
