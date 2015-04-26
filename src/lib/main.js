@@ -183,6 +183,7 @@ function handleChange(state) {
 				captcha_panel.show({ position: pyload_button });
 			} else {
 			// Download panel/webinterface/built-in interface
+<<<<<<< HEAD
 				if (preferences.buttonopt == "P") {
 					pyload_panel.contentURL = data.url("panels/panel.html");
 					pyload_panel.resize(400, 600);
@@ -197,6 +198,18 @@ function handleChange(state) {
 					}
 				} else { // built-in interface (coming soon) ("B")
 					url = data.url("webinterface/index.html");
+=======
+			if (preferences.buttonopt == "P") {
+				pyload_panel.contentURL = data.url("panels/panel.html");
+				pyload_panel.resize(400, 600);
+				pyload_panel.show({ position: pyload_button });
+			} else if (preferences.buttonopt == "I") { // webinterface
+				if (preferences.ssl) {
+					url = "https://" + preferences.address + "/";
+					pyload_button.state('window', {checked: false});
+				} else {
+					url = "http://" + preferences.address + "/";
+>>>>>>> origin/master
 					pyload_button.state('window', {checked: false});
 				}
 			}
