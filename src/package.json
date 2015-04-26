@@ -3,13 +3,14 @@
   "title": "Pyload for Firefox",
   "id": "jid1-2FalyM9m0xdreg",
   "description": "Pyload for Firefox utilizing the webinterface API.",
-  "author": "",
-  "license": "MPL 2.0",
+  "author": "Pinetrax",
+  "license": "MIT",
   "version": "0.1",
+  "permissions": {"private-browsing": true},
   "preferences": [{
-        "name": "adress",
-        "title": "Adress of your pyload webinterface",
-        "description": "Put in IP:Port or webadress of your pyload webinterface.",
+        "name": "address",
+        "title": "Address of your pyload webinterface",
+        "description": "Put in IP:Port or webaddress of your pyload webinterface.",
         "type": "string",
         "value": "localhost:8000"
     },
@@ -25,7 +26,7 @@
 		"title": "Save password",
 		"description": "If you don't want the addon to save your password, uncheck this.",
         "type": "bool",
-        "value": false
+        "value": true
     },
 	{
         "name": "username",
@@ -37,7 +38,7 @@
         "name": "password",
         "title": "Password",
         "type": "string",
-        "value": "1234567"
+        "value": "12345678"
     },
 	{
         "name": "buttonopt",
@@ -64,7 +65,7 @@
 		"title": "Check interval for captchas",
 		"description": "Set time in seconds to check for captchas and put out a notification.",
         "type": "integer",
-        "value": 15
+        "value": 5
     },
 	{
         "name": "sessionid",

@@ -11,19 +11,21 @@
 var loggedin = false;
 var loginfrompanel = false;
 var iscontextmenu = false; // Is the context menu displayed (for loggedin)
+var iscaptchawaiting = false;
 
 // requirements
 var request = require("sdk/request").Request; // Sending posts for API
 var tabs = require("sdk/tabs");
+var tmr = require('sdk/timers');
 
 // Read prefs
 var preferences = require("sdk/simple-prefs").prefs;
 
 // Check login or do the login, else change button behavior to login
 
-if (preferences.username != "" && preferences.password != "" && (/.+?:\d+/.test(preferences.adress) || /[\d\w\.-]+/.test(preferences.adress))) {
+if (preferences.username != "" && preferences.password != "" && (/.+?:\d+/.test(preferences.address) || /[\d\w\.-]+/.test(preferences.address))) {
 	api_login();
-} else if (preferences.sessionid != "" && preferences.username != "" && preferences.password == "" && (/.+?:\d+/.test(preferences.adress) || /[\d\w\.-]+/.test(preferences.adress))) {
+} else if (preferences.sessionid != "" && preferences.username != "" && preferences.password == "" && (/.+?:\d+/.test(preferences.address) || /[\d\w\.-]+/.test(preferences.address))) {
 	api_call("getServerVersion");
 } else {
 	loggedin = false;
@@ -36,9 +38,9 @@ function api_login(password) {
 	password = password || preferences.password;
 	
 	if (preferences.ssl) {
-		var url = "https://" + preferences.adress + "/api/login";
+		var url = "https://" + preferences.address + "/api/login";
 	} else {
-		var url = "http://" + preferences.adress + "/api/login";
+		var url = "http://" + preferences.address + "/api/login";
 	}
 	request({
 		url: url,
@@ -48,6 +50,7 @@ function api_login(password) {
 											// set login done
 											preferences.sessionid = response.text.substr(1, response.text.length - 2);
 											loggedin = true;
+											tmr.setTimeout(checkCaptcha, 420);
 											// console.log("Login successful");
 											// console.log(preferences.sessionid);
 										} else {
@@ -56,16 +59,16 @@ function api_login(password) {
 											// console.log("Login failed");
 											// console.log(response.text);
 										}
-										panelresponse();}
+										loginpanelresponse();}
 		}).post();
 }
 function api_call(name, parameters) {
 	parameters = parameters || { session: preferences.sessionid };
 	parameters.session = preferences.sessionid;
 	if (preferences.ssl) {
-		var url = "https://" + preferences.adress + "/api/" + name;
+		var url = "https://" + preferences.address + "/api/" + name;
 	} else {
-		var url = "http://" + preferences.adress + "/api/" + name;
+		var url = "http://" + preferences.address + "/api/" + name;
 	}
 	request({
 		url: url,
@@ -84,14 +87,42 @@ function api_response(response, name) {
 			} else {
 				loggedin = false;
 			}
-			console.log(response.text);
+			// console.log(response.text);
 			break;
 		case "freeSpace":
-			console.log(response.text);
+			// console.log(response.text);
 			break;
 		case "checkOnlineStatus":
-			console.log(response.text);
+			// console.log(response.text);
+			break;
+		case "isCaptchaWaiting":
+			if (response.text == "true") {
+				iscaptchawaiting = true;
+				api_call("getCaptchaTask");
+				// console.log("Captcha is waiting");
+			} else {
+				if (iscaptchawaiting) {
+					iscaptchawaiting = false;
+					pyload_button.badge = 0;
+					pyload_button.badgeColor = "#00BBBB";
+				}
+			}
+			break;
+		case "getCaptchaTask":
+			captcha_panel.port.emit("CaptchaWaiting", response.json);
+			pyload_button.badge = "!!";
+			pyload_button.badgeColor = "#FF4444";
+			// console.log(response.text);
+			break;
+		case "setCaptchaResult":
+			console.log("Captcha submition response: " + response.text);
+			break;
 	}
+}
+
+function checkCaptcha() {
+	api_call("isCaptchaWaiting");
+	tmr.setTimeout(function(){ checkCaptcha(); }, preferences.captchatime * 1000);
 }
 
 // ------------------------------------------
@@ -104,79 +135,104 @@ var { ToggleButton } = require('sdk/ui/button/toggle');
 var panels = require("sdk/panel");
 
 var pyload_button = ToggleButton({
-  id: "pyload-button",
-  label: "Show Pyload",
-  icon: {
-    "16": "./icon-16.png",
-    "32": "./icon-32.png",
-    "64": "./icon-64.png"
-  },
-  onChange: handleChange,
-  // badge only if active to show that
-  badge: 0, // to remove, set to ""
-  badgeColor: "#00BBBB" // "#9EAB80"
-  // badgeColor: "#FF4444"//"#00AAAA"
-  // active downloads: #00BBBB captcha waiting: #FF4444
+	id: "pyload-button",
+	label: "Show Pyload",
+	icon: {
+		"16": "./icon-16.png",
+		"32": "./icon-32.png",
+		"64": "./icon-64.png"
+	},
+	onChange: handleChange,
+	// badge only if active to show that
+	badge: 0, // to remove, set to ""
+	badgeColor: "#00BBBB" // "#9EAB80"
+	// badgeColor: "#FF4444"//"#00AAAA"
+	// active downloads: #00BBBB captcha waiting: #FF4444
 });
 
 var pyload_panel = panels.Panel({
-  contentURL: data.url("panels/login.html"),
-  // contentScriptFile: data.url("panel/login.js"),
-  width: 400,
-  height: 600,
-  // contextMenu: true,
-  onHide: handleHide
+	contentURL: data.url("panels/login.html"),
+	// contentScriptFile: data.url("panel/login.js"),
+	width: 400,
+	height: 600,
+	// contextMenu: true,
+	onHide: handleHide
 });
+
+var addlinks_panel = panels.Panel({
+	contentURL: data.url("panels/addlinks.html"),
+	width: 600,
+	height: 400,
+	onHide: addlinks
+});
+
+var captcha_panel = panels.Panel({
+	contentURL: data.url("panels/captcha.html"),
+	width: 350,
+	height: 150,
+	onHide: abortcaptcha
+});
+	
 
 function handleChange(state) {
 	if (state.checked) {
 		if (loggedin) {
 			var url = "";
+			// Is a captcha waiting? Else use normal button function
+			if (iscaptchawaiting) {
+				captcha_panel.show({ position: pyload_button });
+			} else {
 			// Download panel/webinterface/built-in interface
-			if (preferences.buttonopt == "P") {
-				pyload_panel.contentURL = data.url("panels/panel.html");
-				pyload_panel.resize(400, 600);
-				pyload_panel.show({ position: pyload_button });
-			} else if (preferences.buttonopt == "I") { // webinterface
-				if (preferences.ssl) {
-					url = "https://" + preferences.adress + "/";
-					pyload_button.state('window', {checked: false});
-				} else {
-					url = "http://" + preferences.adress + "/";
+				if (preferences.buttonopt == "P") {
+					pyload_panel.contentURL = data.url("panels/panel.html");
+					pyload_panel.resize(400, 600);
+					pyload_panel.show({ position: pyload_button });
+				} else if (preferences.buttonopt == "I") { // webinterface
+					if (preferences.ssl) {
+						url = "https://" + preferences.address + "/";
+						pyload_button.state('window', {checked: false});
+					} else {
+						url = "http://" + preferences.address + "/";
+						pyload_button.state('window', {checked: false});
+					}
+				} else { // built-in interface (coming soon) ("B")
+					url = data.url("webinterface/index.html");
 					pyload_button.state('window', {checked: false});
 				}
-				api_call("getServerVersion");
-			} else { // built-in interface (coming soon) ("B")
-				url = data.url("webinterface/index.html");
-				pyload_button.state('window', {checked: false});
 			}
+			// If url is set, open a tab
 			if (url != "") {
-				var reused = false;
+				// Not perfect reusing, may be improved
 				for (let tab of tabs) {
 					if (RegExp(url).test(tab.url)) {
 						tab.activate();
-						reused = true;
+						return 1;
 					}
-					if ((/about:newtab/.test(tab.url)) && !reused) {
+					if (/about:newtab/.test(tab.url)) {
 						tab.activate();
 						tab.url = url;
-						reused = true;
+						return 1;
 					}
 				}
-				if (!reused) {
-					tabs.open(url);
-				}
+				tabs.open(url);
 			}
 		} else {
 			// pyload_panel.contentURL = data.url("panel/login.html"); // when this line is present, giving preferences over is broken :(
 			pyload_panel.resize(300, 400);
 			pyload_panel.show({ position: pyload_button });
-			pyload_panel.port.emit("show", { username: preferences.username, password: preferences.password, savepw: preferences.savepw, adress: preferences.adress, ssl: preferences.ssl });
+			pyload_panel.port.emit("show", { username: preferences.username, password: preferences.password, savepw: preferences.savepw, address: preferences.address, ssl: preferences.ssl });
 		}
 	}
 }
 
 function handleHide() {
+	pyload_button.state('window', {checked: false});
+}
+function addlinks() {
+	console.log("adding links");
+}
+function abortcaptcha() {
+	console.log("captcha aborted");
 	pyload_button.state('window', {checked: false});
 }
 
@@ -192,12 +248,20 @@ pyload_panel.port.on("login_entered", function (logindata) {
 	} else {
 		preferences.password = "";
 	}
-	preferences.adress = logindata.adress;
+	preferences.address = logindata.address;
 	loginfrompanel = true;
 	api_login(logindata.password);
-	// wait for the result (calling panelresponse();)
+	// wait for the result (calling loginpanelresponse();)
 });
-function panelresponse() {
+captcha_panel.port.on("sendcaptcha", function (solution) {
+	api_call("setCaptchaResult", { tid: solution.tid, result: solution.result });
+	console.log("Sending captcha solution: " + solution.result);
+	iscaptchawaiting = false;
+	pyload_button.badge = 0;
+	pyload_button.badgeColor = "#00BBBB";
+	captcha_panel.hide();
+});
+function loginpanelresponse() {
 	if (loginfrompanel) {
 		if (loggedin) {
 			if (preferences.buttonopt == "P") {
@@ -244,7 +308,7 @@ var menuItem = contextMenu.Item({
                  '});',
   image: self.data.url("icon-16.png"),
   onMessage: function (selectionText) {
-    console.log(selectionText);
+    addlinks_panel.show();
   }
 });
 
@@ -258,6 +322,6 @@ cm.Item({
                  '});',
   image: self.data.url("icon-16.png"),
   onMessage: function (selectionText) {
-    console.log(selectionText);
+    addlinks_panel.show();
   }
 });
