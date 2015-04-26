@@ -8,18 +8,9 @@
   "version": "0.1",
   "permissions": {"private-browsing": true},
   "preferences": [{
-<<<<<<< HEAD
         "name": "address",
         "title": "Address of your pyload webinterface",
-<<<<<<< HEAD
         "description": "Put in IP:Port or webaddress of your pyload webinterface.",
-=======
-=======
-        "name": "adress",
-        "title": "Adress of your pyload webinterface",
->>>>>>> 7cd4e4fa5d8f421ad7c2e16c210cbe88e39b3a96
-        "description": "Put in IP:Port or webadress of your pyload webinterface.",
->>>>>>> origin/master
         "type": "string",
         "value": "localhost:8000"
     },
